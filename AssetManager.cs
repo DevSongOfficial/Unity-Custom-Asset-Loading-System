@@ -5,9 +5,9 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-public class AssetManager : MonoBehaviour
-{
-   public static GameObject GetPrefab(string folderName, string prefabName)
+public class AssetManager
+{ 
+    public static GameObject GetPrefab(string folderName, string prefabName)
     {
         var prefab = Resources.Load<GameObject>($"Prefabs/{folderName}/{prefabName}");
         if (prefab is null)
@@ -25,23 +25,16 @@ public class AssetManager : MonoBehaviour
         ReadOnlySpan<char> result = span.Slice(nameof(Prefab).Length + 1);
         return GetPrefab(result.ToString(), prefabType.ToString());
     }
-
-    private void Awake()
-    {
-        DontDestroyOnLoad(gameObject);
-    }
 }
 
 #if UNITY_EDITOR
-[CustomEditor(typeof(AssetManager))]
-public class PrefabScriptEditor : Editor
+public class PrefabScriptEditor : EditorWindow
 {
     // Rename these variables depending on your directory structure.
-    private static readonly string FolderName = "Prefabs";          // Name of the folder where prefab files are located in the project.
-    private static readonly string ScriptPath = "Scripts/Prefab.cs" // This is where the script's going to be generated in the project.
-
+    private static readonly string ScriptPath = "Scripts/Prefab.cs"; // This is where the script's going to be generated in the project.
+    private static readonly string FolderName = "Prefabs"; 
     private readonly string Path_Resources = $"{Application.dataPath}/Resources/{FolderName}";
-    private readonly string Path_PrefabScript = $"{Application.dataPath}/{ScriptPath}}";
+    private readonly string Path_PrefabScript = $"{Application.dataPath}/{ScriptPath}";
 
     private Stack<StringBuilder> previousSources = new Stack<StringBuilder>();
 
@@ -52,7 +45,7 @@ public class PrefabScriptEditor : Editor
 
         var enumInfo = new DirectoryInfo(Path_Resources);
         var enums = enumInfo.GetDirectories(); // Use GetDirectories() to get folders' name cuz they don't have file extenstion.
-        
+
         for (int i = 0; i < enums.Length; i++)
         {
             sourceCode.AppendLine($"\tpublic enum {enums[i].Name} {{"); // Must use item.Name, or you'll get the full name of it including the path. 
@@ -61,9 +54,9 @@ public class PrefabScriptEditor : Editor
                                                                                             // Avoid loading .meta files either by using "*.extensionName".
             for (int j = 0; j < constants.Length; j++)
             {
-                sourceCode.AppendLine($"\t\t{constants[j].Name.Replace(".prefab","")},"); // Don't forget to remove file extension.
+                sourceCode.AppendLine($"\t\t{constants[j].Name.Replace(".prefab", "")},"); // Don't forget to remove file extension.
             }
-            
+
             sourceCode.AppendLine("\t}");
         }
 
@@ -83,7 +76,7 @@ public class PrefabScriptEditor : Editor
         }
 
         File.AppendAllText(Path_PrefabScript, sourceCode + "\n");
-        
+
 
         if (!saveThisScript)
         {
@@ -91,26 +84,35 @@ public class PrefabScriptEditor : Editor
             return null;
         }
 
+        AssetDatabase.Refresh();
+
         Debug.Log("<color=cyan>Save Completed</color>");
         return sourceCode;
     }
 
-    public override void OnInspectorGUI()
+    [MenuItem("Window/Custom Asset Manager")]
+    public static void ShowWindow()
     {
-        DrawDefaultInspector();
+        GetWindow(typeof(PrefabScriptEditor));
+    }
 
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Save Prefabs"))
+    void OnGUI()
+    {
+        GUIStyle saveButton = new GUIStyle(GUI.skin.button);
+
+        if (GUILayout.Button("Save", saveButton))
         {
             Debug.Log("<color=yellow>Saving..</color>");
 
             var newScript = GenerateNewScript();
-            if (newScript is null) return;
-            
+
+            if (newScript == null) return;
             previousSources.Push(newScript);
         }
 
-        if (GUILayout.Button("Revert Changes"))
+        GUIStyle revertButton = new GUIStyle(GUI.skin.button);
+
+        if (GUILayout.Button("Revert", revertButton))
         {
             if (previousSources.Count == 0)
             {
@@ -120,7 +122,6 @@ public class PrefabScriptEditor : Editor
 
             GenerateNewScript(previousSources.Pop(), saveThisScript: false);
         }
-        GUILayout.EndHorizontal();
     }
 }
 #endif

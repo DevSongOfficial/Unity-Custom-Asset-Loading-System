@@ -40,15 +40,16 @@ namespace CustomResourceManagement
                 if (callCount > 0)
                 {
                     var structName = directoryInfo.Name;
-
                     sourceCode.AppendLine($"{tabSpace}public struct {structName}{{");
                 }
                  
                 foreach (var subFolder in subFolders)
-                {
-                    ProcessFolder(subFolder, sourceCode, callCount + 1);  
-                }
-                
+                    ProcessFolder(subFolder, sourceCode, callCount + 1);
+
+
+                if (callCount > 0)
+                    sourceCode.AppendLine($"{tabSpace}}}");
+
             }
             else
             {
@@ -65,13 +66,7 @@ namespace CustomResourceManagement
                     }
                 }
 
-                sourceCode.AppendLine($"{tabSpace}}}"); 
-
-                for(int i = callCount; i > 1; i--)
-                {
-                    tabSpace = new string('\t', i - 1);
-                    sourceCode.AppendLine($"{tabSpace}}}");  
-                }
+                sourceCode.AppendLine($"{tabSpace}}}");
             }
         }
 

@@ -1,4 +1,4 @@
-### Simple Resource Load
+### Simple Resource Loader
 **ResourceLoader** scans folders and all types of resources in **Resources** folder and then generates a C# script that contains structs and enums based on it.
 
 With this, you can load resources simply by calling the **ResourceLoader** after a single drag'n drop into your **Resources** folder:
